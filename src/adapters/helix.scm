@@ -1,4 +1,5 @@
 (require "helix/misc.scm")
+(require "helix/components.scm")
 (require (prefix-in helix. "helix/commands.scm"))
 (require (prefix-in expansion. "../domain/expansion.scm"))
 (require (prefix-in layout. "../domain/layout.scm"))
@@ -14,7 +15,8 @@
 (require (prefix-in theme. "helix/theme.scm"))
 (require (prefix-in component. "helix/component.scm"))
 
-(provide start! focus!)
+(provide start! focus! toggle-visible! visible? hide! show!
+         space-pending? clear-space-pending!)
 
 (define REFRESH-INTERVAL-MS 2000)
 
@@ -23,6 +25,10 @@
 (define *focus-next-frame?* #f)
 (define *started?* #f)
 (define *theme-sources* '())
+(define *grove-space-pending?* #f)
+
+(define (space-pending?) *grove-space-pending?*)
+(define (clear-space-pending!) (set! *grove-space-pending?* #f))
 
 (struct rendered-frame (root layout))
 
@@ -123,6 +129,7 @@
   frame)
 
 (define (handle-event! event)
+  (define was-focused? (and *model* (model.focused? *model*)))
   (define current-layout
     (and
       *latest-frame*
@@ -134,6 +141,12 @@
   (define update-result (input.result-update result))
   (when update-result
     (install-update! update-result))
+  (when (and was-focused?
+             (input.result-pass-through? result)
+             (key-event? event)
+             (char? (key-event-char event))
+             (char=? (key-event-char event) #\space))
+    (set! *grove-space-pending?* #t))
   (input.result-pass-through? result))
 
 (define (start-runtime! side width icons? guides?)
@@ -153,7 +166,13 @@
   #t)
 
 (define (focus!)
+  (clear-space-pending!)
   (when *model*
     (set! *focus-next-frame?* #t)
     (helix.redraw))
   void)
+
+(define (visible?) (component.visible?))
+(define (hide!) (clear-space-pending!) (component.hide!))
+(define (show!) (clear-space-pending!) (component.show!))
+(define (toggle-visible!) (component.toggle-visible!))

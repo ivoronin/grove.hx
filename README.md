@@ -121,6 +121,29 @@ For example:
 Use this call directly for unconditional startup, or inside the
 `grove-workspace-launch?` guard for workspace-only startup.
 
+## Toggling visibility
+
+Grove stays docked once started, but you can hide and reshow it at any time:
+
+| Command | Action |
+| --- | --- |
+| `:grove-toggle!` | From a text buffer, focus Grove (showing it first if hidden). From inside Grove, hide it. |
+| `:grove-hide!` | Hide Grove and release the space it occupied. |
+| `:grove-show!` | Show Grove again and focus it. |
+
+`grove-toggle!` is the natural `Space e` binding: `Space e` in a buffer focuses
+the tree, and `Space e` again while the tree has focus hides it.
+
+```scheme
+(keymap (global)
+  (normal
+    (space
+      (e ":grove-toggle!"))))
+```
+
+Use `:grove-focus!` instead if you only ever want to focus the tree, or
+`:grove-hide!` / `:grove-show!` to control visibility explicitly.
+
 ## Controls
 
 Keyboard commands apply after Grove receives focus through your configured

@@ -1,7 +1,7 @@
 (require "helix/components.scm")
 (require (prefix-in helix. "src/adapters/helix.scm"))
 
-(provide grove-theme grove-start! grove-focus!)
+(provide grove-theme grove-start! grove-focus! grove-hide! grove-show! grove-toggle!)
 
 (struct grove-theme-value (sources))
 
@@ -97,3 +97,29 @@
 ;;Focus Grove.
 (define (grove-focus!)
   (helix.focus!))
+
+;;@doc
+;;Hide Grove.
+(define (grove-hide!)
+  (helix.hide!))
+
+;;@doc
+;;Show and focus Grove.
+(define (grove-show!)
+  (helix.show!)
+  (helix.focus!))
+
+;;@doc
+;;Toggle Grove. From a text buffer this focuses Grove (showing it first if
+;;hidden). From inside Grove this hides it.
+(define (grove-toggle!)
+  (cond
+    [(not (helix.visible?))
+     (helix.show!)
+     (helix.focus!)]
+    [(helix.space-pending?)
+     (helix.clear-space-pending!)
+     (helix.hide!)]
+    [else
+     (helix.clear-space-pending!)
+     (helix.focus!)]))
