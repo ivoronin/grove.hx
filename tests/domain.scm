@@ -80,7 +80,7 @@
   "one row down and up restores the middle"
   (equal? (slot-signature middle) (slot-signature restored)))
 
-(define bottom-anchor (layout.scroll-to top 1 1))
+(define bottom-anchor (layout.scroll-by top (length flat-entries)))
 (define bottom (resolve-flat bottom-anchor GEOMETRY))
 (check
   "bottom keeps its complete Ancestor stack"
@@ -96,8 +96,15 @@
 (check
   "absolute Rail movement reaches both ends"
   (and
-    (equal? root-id (layout.scroll-to middle 0 1))
-    (equal? bottom-anchor (layout.scroll-to middle 1 1))))
+    (equal?
+      root-id
+      (layout.rail-scroll-anchor middle (layout.y middle) 0))
+    (equal?
+      bottom-anchor
+      (layout.rail-scroll-anchor
+        middle
+        (+ (layout.y middle) (layout.height middle) -1)
+        0))))
 
 (define missing
   (resolve-flat "missing" GEOMETRY))
@@ -139,7 +146,7 @@
 (define nested-bottom
   (layout.resolve
     nested-entries
-    (layout.scroll-to nested-top 1 1)
+    (layout.scroll-by nested-top (length nested-entries))
     GEOMETRY
     16
     'left))
@@ -203,14 +210,11 @@
 (define expanded-model
   (focus-frame initial-model nested-snapshot))
 
-(define bottom-id
-  (layout.scroll-to (model.resolved-layout expanded-model) 1 1))
-
 (define bottom-model
   (updated
     (updated expanded-model model.focus-released)
     model.scroll-anchor-requested
-    bottom-id))
+    "tail-00"))
 
 (check
   "the focus law starts with its Active file outside Layout"
@@ -220,7 +224,7 @@
         (equal?
           nested-target
           (tree.entry-id (layout.slot-entry slot))))
-      (layout.pane-slots (model.resolved-layout bottom-model)))))
+      (layout.pane-slots (model.presented-layout bottom-model)))))
 
 (define focused-model
   (focus-frame bottom-model nested-snapshot))
@@ -240,7 +244,7 @@
         unavailable-focused-model ROOT nested-target #f)
       "outer")))
 
-(define focused-layout (model.resolved-layout focused-model))
+(define focused-layout (model.presented-layout focused-model))
 (define focused-facts (model.row-facts focused-model))
 (define focused-cursor-slots
   (filter

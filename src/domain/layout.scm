@@ -5,7 +5,6 @@
   available?
   resolve
   scroll-by
-  scroll-to
   reveal
   x
   y

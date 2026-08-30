@@ -6,7 +6,6 @@
 
 (provide init
   root
-  resolved-layout
   presented-layout
   presentation-requested?
   row-facts
