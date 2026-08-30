@@ -1,6 +1,5 @@
 (require "helix/misc.scm")
 (require (prefix-in helix. "helix/commands.scm"))
-(require (prefix-in expansion. "../domain/expansion.scm"))
 (require (prefix-in layout. "../domain/layout.scm"))
 (require (prefix-in model. "../domain/model.scm"))
 (require (prefix-in path. "../domain/path.scm"))
@@ -26,21 +25,17 @@
 
 (struct rendered-frame (root layout))
 
-(define (observe model-at-observation scan-active-path?)
+(define (observe model-at-observation focus?)
   (define observed-root (host.workspace-root))
   (define active-path (host.active-path))
   (define active-id
     (path.id-for-path observed-root active-path))
-  (define base-expansion
-    (if
-      (equal? observed-root (model.root model-at-observation))
-      (model.expansion model-at-observation)
-      (expansion.empty)))
   (define scan-scope
-    (if
-      (and scan-active-path? active-id)
-      (expansion.expand-ancestors base-expansion active-id)
-      base-expansion))
+    (model.plan-file-tree-scan
+      model-at-observation
+      observed-root
+      active-id
+      focus?))
   (model.observation-snapshot
     observed-root
     (scanner.scan observed-root scan-scope)

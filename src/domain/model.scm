@@ -13,7 +13,7 @@
   icons?
   guides?
   focused?
-  expansion
+  plan-file-tree-scan
   observation-snapshot
   host-observed
   focus-frame-observed
@@ -60,7 +60,6 @@
 (define root model-value-root)
 (define icons? model-value-icons?)
 (define guides? model-value-guides?)
-(define expansion model-value-expansion)
 (define (focused? model)
   (and (model-value-cursor model) #t))
 
@@ -72,6 +71,23 @@
     (string? value)
     (> (string-length value) 0)
     (char=? (string-ref value 0) #\/)))
+
+(define (plan-file-tree-scan model observed-root active-id focus?)
+  (unless
+    (and
+      (valid-root? observed-root)
+      (or (not active-id) (string? active-id))
+      (boolean? focus?))
+    (error "invalid File tree scan plan"))
+  (define base-expansion
+    (if
+      (equal? observed-root (model-value-root model))
+      (model-value-expansion model)
+      (expansion.empty)))
+  (if
+    (and focus? active-id)
+    (expansion.expand-ancestors base-expansion active-id)
+    base-expansion))
 
 (define (copy-model model
          #:root

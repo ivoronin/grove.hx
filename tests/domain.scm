@@ -236,7 +236,8 @@
   "an unavailable Pane does not expand Active file ancestors"
   (not
     (expansion.contains?
-      (model.expansion unavailable-focused-model)
+      (model.plan-file-tree-scan
+        unavailable-focused-model ROOT nested-target #f)
       "outer")))
 
 (define focused-layout (model.resolved-layout focused-model))
