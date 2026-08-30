@@ -1,7 +1,7 @@
 (require "helix/components.scm")
 (require (prefix-in helix. "src/adapters/helix.scm"))
 
-(provide grove-theme grove-start! grove-focus!)
+(provide grove-theme grove-start! grove-focus! grove-visibility-toggle!)
 
 (struct grove-theme-value (sources))
 
@@ -62,7 +62,7 @@
       (valid-theme-source? (cdr (car sources)))
       (valid-theme-sources? (cdr sources)))))
 
-(define (validate-settings side width icons? guides? theme)
+(define (validate-settings side width icons? guides? visibility theme)
   (unless (or (equal? side 'left) (equal? side 'right))
     (error "invalid Grove side"))
   (unless (and (integer? width) (>= width 16) (<= width 64))
@@ -71,6 +71,8 @@
     (error "Grove icons must be a boolean"))
   (unless (boolean? guides?)
     (error "Grove guides must be a boolean"))
+  (unless (member visibility '(always focused))
+    (error "invalid Grove visibility"))
   (unless (grove-theme-value? theme)
     (error "invalid Grove theme"))
   (unless (valid-theme-sources? (grove-theme-value-sources theme))
@@ -79,21 +81,29 @@
 (define (grove-start! #:icons [icons? #t]
          #:guides
          [guides? #t]
+         #:visibility
+         [visibility 'always]
          #:theme
          [theme (grove-theme)]
          #:side
          [side 'left]
          #:width
          [width 32])
-  (validate-settings side width icons? guides? theme)
+  (validate-settings side width icons? guides? visibility theme)
   (helix.start!
     side
     width
     icons?
     guides?
+    visibility
     (grove-theme-value-sources theme)))
 
 ;;@doc
 ;;Focus Grove.
 (define (grove-focus!)
   (helix.focus!))
+
+;;@doc
+;;Toggle Grove Visibility between always and focused.
+(define (grove-visibility-toggle!)
+  (helix.visibility-toggle!))

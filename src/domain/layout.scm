@@ -2,6 +2,7 @@
 (require (prefix-in path. "path.scm"))
 
 (provide geometry geometry-width
+  available?
   resolve
   scroll-by
   scroll-to
@@ -71,6 +72,12 @@
       (>= height 0))
     (error "invalid Host geometry"))
   (geometry-value x y width height))
+
+(define (available? host-geometry requested-width)
+  (and
+    host-geometry
+    (> (geometry-height host-geometry) 0)
+    (>= (geometry-width host-geometry) (+ requested-width 1))))
 
 (define (clamp value lower upper)
   (max lower (min upper value)))
@@ -146,10 +153,8 @@
       (member side-value '(left right)))
     (error "invalid Layout"))
   (and
-    host-geometry
     (pair? visible-entries)
-    (> (geometry-height host-geometry) 0)
-    (>= (geometry-width host-geometry) (+ requested-width 1))
+    (available? host-geometry requested-width)
     (let* ([host-height (geometry-height host-geometry)]
            [total (length visible-entries)]
            [anchor-index

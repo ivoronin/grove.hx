@@ -23,7 +23,18 @@ def test_helix_frame_decodes_vertical_editor_views() -> None:
     assert frame.document == "right.txt"
     assert left is not None
     assert right is not None
+    assert left.column_bounds == (0, 36)
+    assert right.column_bounds == (37, 100)
     assert right.cursor == (2, 1)
+
+
+def test_helix_frame_restores_only_one_omitted_trailing_cell() -> None:
+    frame = _frame(f"{'right.txt ¦ 1 sel GNR ¦ 1:1':67}")
+
+    view = frame.active_view
+
+    assert view is not None
+    assert view.column_bounds == (0, 68)
 
 
 def test_helix_frame_ignores_a_partial_status_line() -> None:

@@ -8,6 +8,44 @@ Feature: Size and place the Pane
     When Helix starts with Grove in that Workspace
     Then Grove is Docked on the "left" at width 32
 
+  Scenario: Show the Pane only while Grove is focused
+    Given a Workspace containing entries
+      | path       |
+      | anchor.txt |
+    And "anchor.txt" is Active
+    And Grove settings
+      | setting    | value   |
+      | visibility | focused |
+    When Helix starts with Grove in that Workspace
+    Then Grove yields the whole terminal to Helix
+    When Grove is focused
+    Then Grove is Docked on the "left" at width 32
+    And "anchor.txt" has Cursor
+    When Grove receives "Escape"
+    Then Grove yields the whole terminal to Helix
+    When Grove is focused
+    Then Grove is Docked on the "left" at width 32
+    And "anchor.txt" has Cursor
+
+  Scenario: Toggle Visibility between focused and always
+    Given a Workspace containing entries
+      | path       |
+      | anchor.txt |
+    And "anchor.txt" is Active
+    And Grove settings
+      | setting    | value   |
+      | visibility | focused |
+    When Helix starts with Grove in that Workspace
+    Then Grove yields the whole terminal to Helix
+    When Grove Visibility is toggled
+    Then Grove is Docked on the "left" at width 32
+    And "anchor.txt" has no Cursor mark
+    When Grove Visibility is toggled
+    Then Grove yields the whole terminal to Helix
+    When Grove Visibility is toggled
+    Then Grove is Docked on the "left" at width 32
+    And "anchor.txt" has no Cursor mark
+
   Scenario Outline: Start on either side at an explicit width
     Given a Workspace containing entries
       | path       |

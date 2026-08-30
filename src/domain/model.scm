@@ -7,6 +7,8 @@
 (provide init
   root
   resolved-layout
+  presented-layout
+  presentation-requested?
   row-facts
   icons?
   guides?
@@ -20,6 +22,8 @@
   save-started
   geometry-observed
   focus-released
+  created-file-open-requested
+  visibility-toggle-requested
   cursor-move-requested
   cursor-expansion-requested
   cursor-open-requested
@@ -42,7 +46,8 @@
     width
     side
     icons?
-    guides?))
+    guides?
+    visibility))
 
 (struct observation-snapshot (root tree git-status active-id))
 
@@ -88,7 +93,9 @@
          #:geometry
          [geometry-value (model-value-geometry model)]
          #:width
-         [width-value (model-value-width model)])
+         [width-value (model-value-width model)]
+         #:visibility
+         [visibility-value (model-value-visibility model)])
   (model-value
     root-value
     file-tree
@@ -102,7 +109,8 @@
     width-value
     (model-value-side model)
     (model-value-icons? model)
-    (model-value-guides? model)))
+    (model-value-guides? model)
+    visibility-value))
 
 (define (without-focus model)
   (copy-model model #:cursor #f))
@@ -135,10 +143,20 @@
 (define (resolved-layout model)
   (resolved-layout-for model (visible-entries model)))
 
+(define (presentation-requested? model)
+  (or
+    (equal? (model-value-visibility model) 'always)
+    (focused? model)))
+
+(define (presented-layout model)
+  (and
+    (presentation-requested? model)
+    (resolved-layout model)))
+
 (define (request-refresh model)
   (update-result model (command 'refresh)))
 
-(define (init side-value width-value icons-value guides-value)
+(define (init side-value width-value icons-value guides-value visibility-value)
   (model-value
     #f
     #f
@@ -152,7 +170,8 @@
     width-value
     side-value
     icons-value
-    guides-value))
+    guides-value
+    visibility-value))
 
 (define (first-surviving-id entries new-ids)
   (define found
@@ -308,7 +327,9 @@
       (if
         (or
           (not (model-value-cursor next-model))
-          (resolved-layout next-model))
+          (layout.available?
+            (model-value-geometry next-model)
+            (model-value-width next-model)))
         next-model
         (without-focus next-model)))))
 
@@ -422,6 +443,11 @@
     (collapse-directory model entry)
     (expand-directory model entry)))
 
+(define (request-file-open model id mode)
+  (update-result
+    (without-focus model)
+    (command 'open-file (model-value-root model) id mode)))
+
 (define (activate-entry model entry mode)
   (cond
     [(not entry)
@@ -429,13 +455,7 @@
     [(tree.expandable? entry)
       (toggle-directory model entry)]
     [(tree.file-kind? (tree.entry-kind entry))
-      (update-result
-        (without-focus model)
-        (command
-          'open-file
-          (model-value-root model)
-          (tree.entry-id entry)
-          mode))]
+      (request-file-open model (tree.entry-id entry) mode)]
     [else
       (update-result model #f)]))
 
@@ -524,6 +544,23 @@
 
 (define (focus-released model)
   (update-result (without-focus model) #f))
+
+(define (created-file-open-requested model root-value id)
+  (if
+    (equal? root-value (model-value-root model))
+    (request-file-open model id 'normal)
+    (update-result model #f)))
+
+(define (visibility-toggle-requested model)
+  (update-result
+    (copy-model
+      model
+      #:visibility
+      (if
+        (equal? (model-value-visibility model) 'always)
+        'focused
+        'always))
+    #f))
 
 (define (row-pressed model id)
   (activate-entry model (entry-for-id model id) 'normal))

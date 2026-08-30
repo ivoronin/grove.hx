@@ -34,11 +34,17 @@ def grove_has_width(grove: GroveDriver, width: int) -> None:
 
 @then("Grove yields the whole terminal to Helix")
 def grove_yields_to_helix(grove: GroveDriver) -> None:
-    grove.wait(
-        lambda frame: (
-            None if frame.pane is None else "Grove did not yield the terminal"
-        ),
-    )
+    def mismatch(frame: GroveFrame) -> str | None:
+        if frame.pane is not None:
+            return "Grove still has a Pane"
+        view = frame.helix.active_view
+        if view is None:
+            return "Helix has no active Editor view"
+        if view.column_bounds != (0, frame.helix.terminal.width):
+            raise AssertionError("Grove left empty space before Helix reclaimed it")
+        return None
+
+    grove.wait(mismatch)
 
 
 _FOREGROUNDS = {

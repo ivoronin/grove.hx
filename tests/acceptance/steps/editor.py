@@ -139,6 +139,11 @@ def focus_grove(grove: GroveDriver) -> None:
     grove.focus()
 
 
+@when("Grove Visibility is toggled")
+def toggle_grove_visibility(grove: GroveDriver) -> None:
+    grove.toggle_visibility()
+
+
 @when(parsers.parse('Grove receives "{key}"'))
 def grove_receives_key(grove: GroveDriver, key: str) -> None:
     grove.key(key)

@@ -18,6 +18,23 @@ Feature: Manage Workspace files
     When the editor receives "i" while Grove is unfocused
     Then the active Editor view is in Insert mode
 
+  Scenario: Reclaim editor space before opening a created file
+    Given a Workspace containing entries
+      | path       |
+      | anchor.txt |
+    And "anchor.txt" is Active
+    And Grove settings
+      | setting    | value   |
+      | visibility | focused |
+    When Helix starts with Grove in that Workspace
+    Then Grove yields the whole terminal to Helix
+    When Grove is focused
+    And Grove receives "n"
+    Then the native prompt is "New file in ./"
+    When the prompt receives "new.txt"
+    Then Grove yields the whole terminal to Helix
+    And Helix shows the "new.txt" document
+
   Scenario: Create a directory beside a file
     Given a Workspace containing entries
       | kind | path       |

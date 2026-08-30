@@ -21,7 +21,6 @@ brew install --HEAD ivoronin/ivoronin/helix-steel
 The formula lives in a personal tap but installs `hx`, Steel, and `forge`
 directly from the upstream repository. To build the Steel fork manually instead, follow
 [Up and running with Helix and Steel Scheme](https://www.tomwaddington.dev/steel-helix-first-steps.html).
-The guide covers the source build, `PATH` setup, and initial Helix Scheme configuration.
 
 Use the same Forge command for the initial install and later upgrades.
 `--force` installs Grove when absent and overwrites an existing installation
@@ -31,13 +30,7 @@ with the latest revision:
 forge pkg install --git https://github.com/ivoronin/grove.hx.git --force
 ```
 
-Choose when Grove should start, then copy that setup into
-`~/.config/helix/init.scm`.
-
-### Workspace-only
-
-Start Grove only when Helix receives `-w` or `--working-dir`. Ordinary
-file-editing sessions remain unchanged.
+Add the following setup to `~/.config/helix/init.scm`:
 
 ```scheme
 (require "grove/grove.scm")
@@ -53,52 +46,30 @@ file-editing sessions remain unchanged.
        #t]
       [else (loop (cdr args))])))
 
-(when (grove-workspace-launch?)
-  (grove-start!))
+(grove-start!
+  #:visibility
+  (if (grove-workspace-launch?) 'always 'focused))
 
 (keymap (global)
   (normal
     (space
-      (e ":grove-focus!"))))
+      (e ":grove-focus!")
+      (E ":grove-visibility-toggle!"))))
 ```
 
-This binds `Space e` to Grove. Merge the binding into your existing keymap or
-choose another chord if `Space e` is already taken.
+This setup keeps Grove visible when Helix starts with `-w` or `--working-dir`.
+For other launches, Grove stays hidden until `Space e` focuses it and hides
+again when Grove releases focus. `Space E` switches between these behaviors for
+the current Helix process. Merge both bindings into your existing keymap or
+choose other chords if they are already taken.
 
-Launch Helix with a Workspace explicitly:
-
-```sh
-hx -w .
-```
-
-`hx --working-dir .` is equivalent.
-
-### Unconditional
-
-Start Grove in every Helix session, using Helix's working directory as the
-Workspace:
-
-```scheme
-(require "grove/grove.scm")
-(require "helix/keymaps.scm")
-
-(grove-start!)
-
-(keymap (global)
-  (normal
-    (space
-      (e ":grove-focus!"))))
-```
-
-This binds `Space e` to Grove. Merge the binding into your existing keymap or
-choose another chord if `Space e` is already taken.
-
-Do not use `hx .` with either mode. Helix treats a positional directory as a
-request to open its native file picker before Steel components mount.
+Use `hx -w .` or `hx --working-dir .` for an explicit Workspace launch. Do not
+use `hx .`; Helix treats a positional directory as a request to open its native
+file picker before Steel components mount.
 
 ## Configuration
 
-`grove-start!` accepts five optional settings:
+`grove-start!` accepts these optional settings:
 
 | Setting | Default | Values | Effect |
 | --- | --- | --- | --- |
@@ -107,6 +78,7 @@ request to open its native file picker before Steel components mount.
 | `#:side` | `'left` | `'left` or `'right` | Places Grove on that side of the editor. |
 | `#:theme` | `(grove-theme)` | A `grove-theme` value | Follows the active Helix theme by default. See [THEMING.md](THEMING.md) for role and color overrides. |
 | `#:width` | `32` | `16` through `64` | Sets the total width, including the Rail that separates Grove from the editor and acts as its scrollbar. |
+| `#:visibility` | `'always` | `'always` or `'focused` | Keeps the Pane visible, or shows it only while Grove is focused. |
 
 For example:
 
@@ -118,8 +90,13 @@ For example:
   #:width 40)
 ```
 
-Use this call directly for unconditional startup, or inside the
-`grove-workspace-launch?` guard for workspace-only startup.
+Visibility controls when Grove presents an available Pane and when Helix can
+use its space:
+
+| Visibility | While Grove is unfocused | `grove-focus!` |
+| --- | --- | --- |
+| `'always` | The Pane stays visible. | Focuses the current Pane. |
+| `'focused` | The Pane stays hidden. | Shows and focuses the current Pane. |
 
 ## Controls
 

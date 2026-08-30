@@ -65,6 +65,13 @@ Grove's visible docked region: File tree rows plus the permanent Rail. It is
 presentation geometry, not a state owner or a separate Helix pane.
 _Avoid_: Runtime pane, pane model, interaction state
 
+**Visibility**:
+The policy that controls when Grove presents an available Pane. `always` keeps
+the Pane visible. `focused` presents it only while Grove owns Cursor. Toggling
+Visibility changes the policy for the current Helix process without changing
+the Workspace session, side, or requested width.
+_Avoid_: Hidden flag, show state, Pane availability
+
 **Host geometry**:
 The latest component rectangle reported by Helix at the start of rendering.
 Model stores this observation. Layout combines it with requested width and side

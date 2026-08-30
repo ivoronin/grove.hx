@@ -39,6 +39,7 @@ class EditorView:
     document: str
     mode: str | None
     cursor: tuple[int, int] | None
+    column_bounds: tuple[int, int]
     lines: tuple[str, ...]
     status_row: int
 
@@ -63,7 +64,7 @@ class HelixFrame:
 
     @classmethod
     def decode(cls, terminal: TerminalFrame) -> HelixFrame:
-        segments = tuple(_status_segments(terminal.lines))
+        segments = tuple(_status_segments(terminal.lines, terminal.width))
         views = tuple(
             _view(
                 segment,
@@ -265,17 +266,21 @@ def _view(segment: _StatusSegment, lines: Sequence[str]) -> EditorView:
         document.strip(),
         modes[0] if modes else None,
         (int(cursor.group(1)), int(cursor.group(2))) if cursor else None,
+        (segment.start, segment.end),
         tuple(line[segment.start : segment.end].rstrip() for line in lines),
         segment.row,
     )
 
 
-def _status_segments(lines: tuple[str, ...]):
+def _status_segments(lines: tuple[str, ...], terminal_width: int):
     for row, line in enumerate(lines):
         for match in re.finditer(r"[^│▕▐▏▌]+", line):
             status = match.group().strip()
             if _is_status(status):
                 start, end = match.span()
+                # tmux omits Helix's trailing blank status cell.
+                if end == len(line) and end < terminal_width:
+                    end += 1
                 yield _StatusSegment(row, start, end, status)
 
 

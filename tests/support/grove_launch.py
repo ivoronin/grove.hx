@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
-from pathlib import Path
+from pathlib import Path, PurePath
 
 from libtmux.server import Server
 
@@ -15,6 +15,8 @@ _SETTING_VALUES = {
     "disabled": "#f",
     "left": "'left",
     "right": "'right",
+    "always": "'always",
+    "focused": "'focused",
     "middle": "'middle",
     "wide text": json.dumps("wide"),
     "non-boolean": "'enabled",
@@ -43,7 +45,9 @@ def start_grove(
         init=init,
     )
     try:
-        grove = GroveDriver.attach(helix, workspace)
+        grove = GroveDriver(helix, workspace)
+        if (settings or {}).get("visibility", "always") == "always":
+            grove.wait_for_row(PurePath(), timeout=30)
         # Focusing before Helix opens the Active file starts the Cursor on the
         # Workspace root instead. A file outside it lands there either way.
         if active_file is not None and active_file.is_relative_to(workspace.root):
@@ -88,7 +92,8 @@ def _grove_init(repository: Path, startup: str, init: str) -> str:
         ' (set-status! "Grove test key reached Helix"))\n'
         f"{startup}\n"
         "(keymap (global)\n"
-        ' (normal (space (e ":grove-focus!"))\n'
+        ' (normal (space (e ":grove-focus!")\n'
+        '                (E ":grove-visibility-toggle!"))\n'
         "  (C-n grove-test-key-received) (C-r grove-test-key-received)\n"
         "  (C-d grove-test-key-received) (C-j grove-test-key-received)\n"
         "  (C-y grove-test-key-received)))\n"

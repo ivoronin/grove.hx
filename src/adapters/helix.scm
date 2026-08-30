@@ -14,7 +14,7 @@
 (require (prefix-in theme. "helix/theme.scm"))
 (require (prefix-in component. "helix/component.scm"))
 
-(provide start! focus!)
+(provide start! focus! visibility-toggle!)
 
 (define REFRESH-INTERVAL-MS 2000)
 
@@ -54,6 +54,9 @@
 (define (schedule-refresh!)
   (enqueue-thread-local-callback refresh-now!))
 
+(define (created-file! root id)
+  (dispatch! model.created-file-open-requested root id))
+
 (define (subscribe-to-refresh!)
   (define (schedule-next!)
     (enqueue-thread-local-callback-with-delay
@@ -77,32 +80,49 @@
     [(equal? kind 'create)
       (apply
         files.prompt-create!
-        (append arguments (list dispatch! refresh-now!)))]
+        (append arguments (list created-file! refresh-now!)))]
     [(equal? kind 'rename)
       (apply files.prompt-rename! (append arguments (list refresh-now!)))]
     [(equal? kind 'delete)
       (apply files.confirm-delete! (append arguments (list refresh-now!)))]
     [else (error "unknown Model command")]))
 
-(define (install-update! update-result)
-  (define next-model (model.update-result-model update-result))
-  (set! *model* next-model)
+(define (release-pane!)
+  (component.apply-clip! 0)
+  (set! *latest-frame* #f)
+  (input.cancel!))
+
+(define (commit! update-result)
+  (define was-requested? (model.presentation-requested? *model*))
+  (set! *model* (model.update-result-model update-result))
+  (define requested? (model.presentation-requested? *model*))
+  (define presentation-changed?
+    (not (equal? was-requested? requested?)))
+  (when (and presentation-changed? (not requested?))
+    (release-pane!))
   (define command (model.update-result-command update-result))
   (when command
-    (execute-command! command)))
+    (execute-command! command))
+  presentation-changed?)
+
+(define (commit-and-redraw-if-needed! update-result)
+  (when (commit! update-result)
+    (helix.redraw)))
 
 (define (dispatch! transition . arguments)
-  (install-update! (apply transition *model* arguments)))
+  (commit-and-redraw-if-needed!
+    (apply transition *model* arguments)))
 
 (define (render-current! geometry frame)
   (if
     *focus-next-frame?*
     (let ([snapshot (observe *model* #t)])
       (set! *focus-next-frame?* #f)
-      (dispatch! model.focus-frame-observed snapshot geometry))
-    (dispatch! model.geometry-observed geometry))
+      (commit!
+        (model.focus-frame-observed *model* snapshot geometry)))
+    (commit! (model.geometry-observed *model* geometry)))
   (define model-at-render *model*)
-  (define current-layout (model.resolved-layout model-at-render))
+  (define current-layout (model.presented-layout model-at-render))
   (if current-layout
     (begin
       (component.apply-clip! (layout.width current-layout))
@@ -116,10 +136,7 @@
           (model.guides? model-at-render)))
       (set! *latest-frame*
         (rendered-frame (model.root model-at-render) current-layout)))
-    (begin
-      (component.apply-clip! 0)
-      (set! *latest-frame* #f)
-      (input.cancel!)))
+    (release-pane!))
   frame)
 
 (define (handle-event! event)
@@ -133,27 +150,40 @@
   (define result (input.handle! *model* current-layout event))
   (define update-result (input.result-update result))
   (when update-result
-    (install-update! update-result))
+    (commit-and-redraw-if-needed! update-result))
   (input.result-pass-through? result))
 
-(define (start-runtime! side width icons? guides?)
-  (set! *model* (model.init side width icons? guides?))
-  (hooks.install! dispatch!)
+(define (start-runtime! side width icons? guides? visibility)
+  (set! *model* (model.init side width icons? guides? visibility))
   (component.install! side render-current! handle-event!)
+  (hooks.install! dispatch!)
   (subscribe-to-refresh!)
-  (schedule-refresh!))
+  (refresh-now!))
 
-(define (start! side width icons? guides? theme-sources)
+(define (start! side width icons? guides? visibility theme-sources)
   (when *started?*
     (error "Grove has already started"))
   (set! *started?* #t)
   (set! *theme-sources* theme-sources)
   (enqueue-thread-local-callback
-    (lambda () (start-runtime! side width icons? guides?)))
+    (lambda () (start-runtime! side width icons? guides? visibility)))
   #t)
 
-(define (focus!)
-  (when *model*
-    (set! *focus-next-frame?* #t)
-    (helix.redraw))
+(define (enqueue-after-start! action)
+  (when *started?*
+    (enqueue-thread-local-callback action))
   void)
+
+(define (focus!)
+  (enqueue-after-start!
+    (lambda ()
+      (set! *focus-next-frame?* #t)
+      (helix.redraw))))
+
+(define (visibility-toggle!)
+  (enqueue-after-start!
+    (lambda ()
+      ; Keep this struct-to-struct conversion direct. ADR 0001 covers Steel
+      ; JIT corruption.
+      (commit-and-redraw-if-needed!
+        (model.visibility-toggle-requested *model*)))))
