@@ -180,7 +180,7 @@
         (loop (+ height 1))))))
 
 (define initial-model
-  (model.init 'left 16 #t #t))
+  (model.init 'left 16 #t #t 'always))
 
 (define (updated model-value transition . arguments)
   (model.update-result-model
@@ -269,6 +269,18 @@
     (equal?
       (list ROOT nested-target 'normal)
       (model.model-command-arguments open-command))))
+
+(define stale-created-result
+  (model.created-file-open-requested
+    focused-model
+    "/another-workspace"
+    "created.txt"))
+
+(check
+  "a completion from another Workspace cannot transfer control"
+  (and
+    (model.focused? (model.update-result-model stale-created-result))
+    (not (model.update-result-command stale-created-result))))
 
 (define (ordinary-slot? current-layout id)
   (any?

@@ -3,7 +3,6 @@
 (require "helix/misc.scm")
 (require-builtin steel/filesystem)
 (require (prefix-in helix. "helix/commands.scm"))
-(require (prefix-in model. "../../domain/model.scm"))
 (require (prefix-in path. "../../domain/path.scm"))
 (require (prefix-in host. "host.scm"))
 
@@ -101,7 +100,7 @@
          kind
          root
          destination-id
-         dispatch!
+         created-file!
          refresh!)
   (define destination (path.path-for-id root destination-id))
   (define description
@@ -126,8 +125,7 @@
           (create-directory! destination)))
       (lambda ()
         (when (equal? kind 'file)
-          (host.open-file! destination 'normal)
-          (dispatch! model.focus-released))))))
+          (created-file! root destination-id))))))
 
 (define (execute-rename! root source-id destination-id refresh!)
   (define source (path.path-for-id root source-id))
@@ -181,7 +179,7 @@
           (delete-file! source)))
       (lambda () (close-affected! documents)))))
 
-(define (prompt-create! kind root parent-id dispatch! refresh!)
+(define (prompt-create! kind root parent-id created-file! refresh!)
   (define label
     (string-append
       (if (equal? kind 'file) "New file in " "New directory in ")
@@ -199,7 +197,7 @@
           kind
           root
           destination-id
-          dispatch!
+          created-file!
           refresh!)))))
 
 (define (prompt-rename! root source-id refresh!)

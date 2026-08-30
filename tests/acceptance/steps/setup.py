@@ -30,6 +30,11 @@ def grove_start_count() -> int:
     return 1
 
 
+@pytest.fixture
+def grove_init() -> str:
+    return ""
+
+
 @given("Grove settings", target_fixture="grove_settings")
 def configured_grove(datatable: list[list[str]]) -> dict[str, str]:
     return dict(datatable[1:])
@@ -38,6 +43,16 @@ def configured_grove(datatable: list[list[str]]) -> dict[str, str]:
 @given("Grove starts twice", target_fixture="grove_start_count")
 def start_twice() -> int:
     return 2
+
+
+@given(
+    parsers.parse('Grove calls "{action}" during Helix initialization'),
+    target_fixture="grove_init",
+)
+def call_grove_during_initialization(action: str) -> str:
+    if action not in {"grove-focus!", "grove-visibility-toggle!"}:
+        raise ValueError(f"Unknown Grove action: {action}")
+    return f"({action})"
 
 
 @when("Grove startup is attempted", target_fixture="helix")
@@ -87,6 +102,7 @@ def start_helix(
     workspace: WorkspaceFixture,
     active_file: Path | None,
     grove_settings: dict[str, str],
+    grove_init: str,
     helix_theme: str,
 ) -> GroveDriver:
     return _launch(
@@ -97,6 +113,7 @@ def start_helix(
         active_file,
         settings=grove_settings,
         theme=helix_theme,
+        init=grove_init,
     )
 
 

@@ -207,16 +207,6 @@ class GroveDriver:
     helix: HelixDriver
     workspace: WorkspaceFixture
 
-    @classmethod
-    def attach(
-        cls,
-        helix: HelixDriver,
-        workspace: WorkspaceFixture,
-    ) -> GroveDriver:
-        driver = cls(helix, workspace)
-        driver._wait_for_workspace_root()
-        return driver
-
     def close(self) -> None:
         self.helix.close()
 
@@ -289,6 +279,10 @@ class GroveDriver:
             )
         )
 
+    def toggle_visibility(self) -> None:
+        self.helix.terminal.key("Space")
+        self.helix.terminal.write("E")
+
     def key(self, name: str) -> None:
         self.helix.terminal.key(name)
 
@@ -355,31 +349,14 @@ class GroveDriver:
     def change_workspace(self, workspace: WorkspaceFixture) -> None:
         self.helix.command(f"cd {json.dumps(str(workspace.root))}")
         self.workspace = workspace
-        self._wait_for_workspace_root()
 
     def push_workspace(self, workspace: WorkspaceFixture) -> None:
         self.helix.command(f"pushd {json.dumps(str(workspace.root))}")
         self.workspace = workspace
-        self._wait_for_workspace_root()
 
     def pop_workspace(self, workspace: WorkspaceFixture) -> None:
         self.helix.command("popd")
         self.workspace = workspace
-        self._wait_for_workspace_root()
-
-    def _wait_for_workspace_root(self) -> None:
-        # Helix fires no hook for a directory change, so only Grove's periodic
-        # refresh notices one.
-        self.wait(
-            lambda frame: (
-                None
-                if frame.pane is not None
-                and frame.pane.workspace_root is not None
-                and frame.pane.workspace_root.label == self.workspace.root.name
-                else "Grove did not change Workspace"
-            ),
-            timeout=30,
-        )
 
     def _pane_column(self, frame: GroveFrame | None = None) -> int:
         frame = frame or self.capture()

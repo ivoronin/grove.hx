@@ -21,17 +21,36 @@ Feature: Start Grove
     Then Grove startup reports "<message>"
 
     Examples:
-      | setting | value       | message                        |
-      | side    | middle      | invalid Grove side             |
-      | width   | 15          | invalid Grove width            |
-      | width   | wide text   | invalid Grove width            |
-      | icons   | non-boolean | Grove icons must be a boolean  |
-      | guides  | non-boolean | Grove guides must be a boolean |
+      | setting    | value       | message                        |
+      | side       | middle      | invalid Grove side             |
+      | width      | 15          | invalid Grove width            |
+      | width      | wide text   | invalid Grove width            |
+      | icons      | non-boolean | Grove icons must be a boolean  |
+      | guides     | non-boolean | Grove guides must be a boolean |
+      | visibility | middle      | invalid Grove visibility       |
 
   Scenario: Reject a second start
     Given Grove starts twice
     When Grove startup is attempted
     Then Grove startup reports "Grove has already started"
+
+  Scenario Outline: Accept an action before deferred startup completes
+    Given a Workspace containing entries
+      | path       |
+      | anchor.txt |
+    And "anchor.txt" is Active
+    And Grove settings
+      | setting    | value   |
+      | visibility | focused |
+    And Grove calls "<action>" during Helix initialization
+    When Helix starts with Grove in that Workspace
+    Then Grove is Docked on the "left" at width 32
+    And "anchor.txt" <cursor>
+
+    Examples:
+      | action                    | cursor             |
+      | grove-focus!              | has Cursor         |
+      | grove-visibility-toggle!  | has no Cursor mark |
 
   Scenario: Start without an Active file
     Given a Workspace containing entries
