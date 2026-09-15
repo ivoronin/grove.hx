@@ -191,7 +191,7 @@ Feature: Navigate the File tree with the keyboard
       | 20     | page-20.txt |
       | 30     | page-10.txt |
 
-  Scenario Outline: Expand and collapse a directory with horizontal keys
+  Scenario Outline: Expand and collapse a directory with the keyboard
     Given a Workspace containing entries
       | kind      | path              |
       | file      | anchor.txt        |
@@ -212,21 +212,7 @@ Feature: Navigate the File tree with the keyboard
       | expand | collapse |
       | Right  | Left     |
       | l      | h        |
-
-  Scenario: Collapse an expanded directory with Enter
-    Given a Workspace containing entries
-      | kind      | path              |
-      | file      | anchor.txt        |
-      | directory | folder            |
-      | file      | folder/inside.txt |
-    And "anchor.txt" is Active
-    When Helix starts with Grove in that Workspace
-    And Grove is focused
-    And Grove receives "Up"
-    And Grove receives "Enter"
-    Then the File tree shows "folder/inside.txt"
-    When Grove receives "Enter"
-    Then the File tree does not show "folder/inside.txt"
+      | Enter  | Enter    |
 
   Scenario: Leave a collapsed directory unchanged with Left
     Given a Workspace containing entries

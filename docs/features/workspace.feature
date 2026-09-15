@@ -31,7 +31,7 @@ Feature: Follow Helix's current Workspace
     Then the File tree root is "second"
     And "shared.txt" uses the theme text foreground
 
-  Scenario: Replace the Workspace after push-directory
+  Scenario: Replace the Workspace with push-directory and return with pop-directory
     Given a Workspace named "first" containing entries
       | path    |
       | old.txt |
@@ -44,18 +44,6 @@ Feature: Follow Helix's current Workspace
     Then the File tree root is "second"
     And the File tree shows "new.txt"
     But the File tree does not show "old.txt"
-
-  Scenario: Return to the previous Workspace
-    Given a Workspace named "first" containing entries
-      | path    |
-      | old.txt |
-    And "old.txt" is Active in Workspace "first"
-    And a Workspace named "second" containing entries
-      | path    |
-      | new.txt |
-    When Helix starts with Grove in Workspace "first"
-    And Helix runs "push-directory" for Workspace "second"
-    Then the File tree root is "second"
     When Helix runs "pop-directory" for Workspace "first"
     Then the File tree root is "first"
     And the File tree shows "old.txt"

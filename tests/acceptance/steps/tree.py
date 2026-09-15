@@ -15,13 +15,7 @@ def _visible_row(
 
 @then(parsers.parse('the File tree shows "{name}"'))
 def file_tree_shows(grove: GroveDriver, name: str) -> None:
-    grove.wait(
-        lambda frame: (
-            None
-            if _visible_row(frame, name) is not None
-            else f'Grove did not show "{name}"'
-        ),
-    )
+    grove.wait_for_row(scenario_path(name))
 
 
 @then(parsers.parse('the File tree already shows "{name}"'))
@@ -36,12 +30,18 @@ def file_tree_already_does_not_show(grove: GroveDriver, name: str) -> None:
     assert _visible_row(grove.capture(), name) is None, f'Grove still showed "{name}"'
 
 
-@then(parsers.parse('the content of "{name}" starts with "{text}"'))
-def file_content_starts_with(
+@then(
+    parsers.re(
+        r'^the content of "(?P<name>.+)" '
+        r'(?P<comparison>starts with|contains) "(?P<text>.*)"$'
+    )
+)
+def file_content_matches(
     grove: GroveDriver,
     workspace: WorkspaceFixture,
     name: str,
     text: str,
+    comparison: str,
 ) -> None:
     document = workspace.path(name)
 
@@ -50,30 +50,10 @@ def file_content_starts_with(
             content = document.read_text(encoding="utf-8")
         except FileNotFoundError:
             return f'"{name}" disappeared while Helix saved it'
-        if not content.startswith(text):
-            return f'The content of "{name}" did not start with {text!r}'
-        return None
-
-    grove.wait(mismatch)
-
-
-@then(parsers.parse('the content of "{name}" contains "{text}"'))
-def file_content_contains(
-    grove: GroveDriver,
-    workspace: WorkspaceFixture,
-    name: str,
-    text: str,
-) -> None:
-    document = workspace.path(name)
-
-    def mismatch(_frame: GroveFrame) -> str | None:
-        try:
-            content = document.read_text(encoding="utf-8")
-        except FileNotFoundError:
-            return f'"{name}" disappeared while Helix saved it'
-        if text not in content:
-            return f'The content of "{name}" did not contain {text!r}'
-        return None
+        matches = (
+            content.startswith(text) if comparison == "starts with" else text in content
+        )
+        return None if matches else f'Expected "{name}" content: {comparison} {text!r}'
 
     grove.wait(mismatch)
 
@@ -289,28 +269,12 @@ def icon_label_columns(grove: GroveDriver, directory: str, file: str) -> None:
 
 @then(parsers.parse('"{name}" can expand'))
 def entry_can_expand(grove: GroveDriver, name: str) -> None:
-    _entry_has_disclosure(grove, name, "▸")
+    _wait_for_disclosure(grove, name, "▸")
 
 
 @then(parsers.parse('"{name}" cannot expand'))
 def entry_cannot_expand(grove: GroveDriver, name: str) -> None:
-    _entry_has_disclosure(grove, name, None)
-
-
-def _entry_has_disclosure(
-    grove: GroveDriver,
-    name: str,
-    expected: str | None,
-) -> None:
-    state = "expandable" if expected is not None else "inert"
-    grove.wait(
-        lambda frame: (
-            None
-            if (row := _visible_row(frame, name)) is not None
-            and row.disclosure == expected
-            else f'"{name}" did not become {state}'
-        ),
-    )
+    _wait_for_disclosure(grove, name, None)
 
 
 @then(parsers.parse('"{child}" is indented two columns from "{parent}"'))
@@ -378,13 +342,13 @@ def _toggle_directory(grove: GroveDriver, name: str, disclosure: str) -> None:
     _wait_for_disclosure(grove, name, disclosure)
 
 
-def _wait_for_disclosure(grove: GroveDriver, name: str, disclosure: str) -> None:
+def _wait_for_disclosure(grove: GroveDriver, name: str, disclosure: str | None) -> None:
     grove.wait(
         lambda frame: (
             None
             if (row := _visible_row(frame, name)) is not None
             and row.disclosure == disclosure
-            else f'Grove did not show "{name}" with disclosure {disclosure}'
+            else f'Grove did not show "{name}" with disclosure {disclosure!r}'
         ),
     )
 

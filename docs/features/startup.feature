@@ -70,6 +70,7 @@ Feature: Start Grove
     And "anchor.txt" is Active
     When Helix starts with Grove in that Workspace
     Then the File tree shows "anchor.txt"
+    And Grove is Docked on the "left" at width 32
     When the editor receives "i" while Grove is unfocused
     Then the active Editor view is in Insert mode
 

@@ -63,6 +63,12 @@ Feature: Keep the File tree current
     And "broken-link" cannot expand
     And the File tree does not show ".git"
     And the File tree does not show "named-pipe"
+    And "file-link" uses the File link icon
+    And "directory-link" uses the directory icon
+    And "broken-link" uses the Broken link icon
+    And "file-link" uses 1 Leaf mark
+    And "directory-link" uses 1 Leaf mark
+    And "broken-link" uses 1 Leaf mark
 
   Scenario: Reclassify a link when its external target appears
     Given a Workspace containing entries

@@ -80,23 +80,6 @@ Feature: Present File tree rows
     And "plain.txt" has no Cursor mark
     And "active.txt" aligns with "plain.txt" in icon mode
 
-  Scenario: Present links by target state
-    Given a Workspace containing entries
-      | kind                      | path           | target    |
-      | file                      | file2.txt      |           |
-      | directory                 | adir           |           |
-      | file link                 | file-link      | file2.txt |
-      | unfollowed directory link | directory-link | adir      |
-      | broken link               | broken-link    | missing   |
-    And "file2.txt" is Active
-    When Helix starts with Grove in that Workspace
-    Then "file-link" uses the File link icon
-    And "directory-link" uses the directory icon
-    And "broken-link" uses the Broken link icon
-    And "file-link" uses 1 Leaf mark
-    And "directory-link" uses 1 Leaf mark
-    And "broken-link" uses 1 Leaf mark
-
   Scenario: Present an unreadable directory as failed
     Given a Workspace containing entries
       | kind      | path              |

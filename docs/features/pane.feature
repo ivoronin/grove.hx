@@ -1,13 +1,5 @@
 Feature: Size and place the Pane
 
-  Scenario: Start with the public Pane defaults
-    Given a Workspace containing entries
-      | path       |
-      | anchor.txt |
-    And "anchor.txt" is Active
-    When Helix starts with Grove in that Workspace
-    Then Grove is Docked on the "left" at width 32
-
   Scenario: Show the Pane only while Grove is focused
     Given a Workspace containing entries
       | path       |
