@@ -322,6 +322,40 @@ def exit_helix(grove: GroveDriver) -> None:
     grove.helix.quit()
 
 
+@when(
+    parsers.parse(
+        'Helix reloads configuration {count:d} times through "{method}" '
+        "with reload key {key}"
+    )
+)
+def repeated_configuration_reload(
+    grove: GroveDriver, count: int, method: str, key: str
+) -> None:
+    for iteration in range(count):
+        if iteration:
+            grove.helix.terminal.key("Escape")
+            grove.helix.wait(
+                lambda frame: (
+                    None
+                    if "Config refreshed" not in frame.bottom_line
+                    else "Reload status not cleared"
+                )
+            )
+        if method == "command prompt":
+            grove.helix.command("config-reload")
+        elif method == "hotkey":
+            grove.helix.terminal.key(key.replace("C-", "Ctrl-", 1))
+        else:
+            raise ValueError(f"Unknown reload method: {method}")
+        grove.helix.wait(
+            lambda frame: (
+                None
+                if "Config refreshed" in frame.bottom_line
+                else "Reload not completed"
+            )
+        )
+
+
 @then("Helix exits normally")
 def helix_exits_normally(grove: GroveDriver) -> None:
     assert grove.helix.wait_for_exit() == 0

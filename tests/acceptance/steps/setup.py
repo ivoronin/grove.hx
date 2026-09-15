@@ -35,6 +35,14 @@ def grove_init() -> str:
     return ""
 
 
+@given(
+    parsers.parse("Helix binds {key} to configuration reload"),
+    target_fixture="grove_init",
+)
+def reload_hotkey(key: str) -> str:
+    return f'(keymap (global) (normal ({key} ":config-reload")))'
+
+
 @given("Grove settings", target_fixture="grove_settings")
 def configured_grove(datatable: list[list[str]]) -> dict[str, str]:
     return dict(datatable[1:])

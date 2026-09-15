@@ -52,14 +52,15 @@
 (define (created-file! root id)
   (dispatch! model.created-file-open-requested root id))
 
+; ADR 0011: keep timer recursion at module scope to avoid an expired capture.
+(define (refresh-and-reschedule!)
+  (refresh-now!)
+  (subscribe-to-refresh!))
+
 (define (subscribe-to-refresh!)
-  (define (schedule-next!)
-    (enqueue-thread-local-callback-with-delay
-      REFRESH-INTERVAL-MS
-      (lambda ()
-        (refresh-now!)
-        (schedule-next!))))
-  (schedule-next!))
+  (enqueue-thread-local-callback-with-delay
+    REFRESH-INTERVAL-MS
+    refresh-and-reschedule!))
 
 (define (execute-command! command)
   (define kind (model.model-command-kind command))

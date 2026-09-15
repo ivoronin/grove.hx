@@ -18,6 +18,8 @@
     (set! *clip-width* width)))
 
 (define (install! side render! handle-event!)
+  ; An old component can pop its replacement when Helix sends an idle event.
+  (pop-last-component-by-name! GROVE-NAME)
   (set! *clip-side* side)
   (set! *clip-width* #f)
   (apply-clip! 0)

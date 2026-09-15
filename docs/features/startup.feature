@@ -73,6 +73,37 @@ Feature: Start Grove
     When the editor receives "i" while Grove is unfocused
     Then the active Editor view is in Insert mode
 
+  Scenario Outline: Reload Helix configuration with Grove running
+    Given a Workspace containing entries
+      | path       |
+      | anchor.txt |
+    And "anchor.txt" is Active
+    And Helix binds <key> to configuration reload
+    When Helix starts with Grove in that Workspace
+    And Grove <action>
+    And Helix reloads configuration 3 times through "<method>" with reload key <key>
+    Then the File tree shows "anchor.txt"
+    When Grove is focused
+    Then "anchor.txt" has Cursor
+    When Grove receives "n"
+    Then the native prompt is "New file in ./"
+    When the prompt receives "recovered.txt"
+    Then "recovered.txt" exists as an empty file
+    And the File tree shows "recovered.txt"
+    When the editor inserts "saved after reload" and saves
+    Then the content of "recovered.txt" starts with "saved after reload"
+    When "appeared.txt" is created
+    Then the File tree shows "appeared.txt"
+    When Helix exits
+    Then Helix exits normally
+
+    Examples:
+      | method         | action            | key |
+      | command prompt | is focused        | C-x |
+      | command prompt | receives "Escape" | C-z |
+      | hotkey         | is focused        | C-x |
+      | hotkey         | receives "Escape" | C-z |
+
   Scenario: Exit with Grove running
     Given a Workspace containing entries
       | path       |
